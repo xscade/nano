@@ -89,8 +89,7 @@ const App: React.FC = () => {
 
     try {
       let resultImageUrl: string;
-      const fullPrompt = `Please generate a new image with a strict aspect ratio of ${aspectRatio}. The content of the image should be based on the following instructions: ${prompt}`;
-
+      
       if (mode === 'image-to-image') {
         if (images.length === 0 || !prompt) {
           setError('Please upload at least one image and provide a prompt.');
@@ -98,6 +97,7 @@ const App: React.FC = () => {
           return;
         }
         
+        const fullPrompt = `Please generate a new image with a strict aspect ratio of ${aspectRatio}. The content of the image should be based on the following instructions: ${prompt}`;
         const processedImageData = await Promise.all(
           images.map(img => processImageWithAspectRatio(img, aspectRatio))
         );
@@ -109,7 +109,7 @@ const App: React.FC = () => {
           setIsLoading(false);
           return;
         }
-        resultImageUrl = await generateImageFromText(fullPrompt);
+        resultImageUrl = await generateImageFromText(prompt, aspectRatio);
       }
       setGeneratedImage(resultImageUrl);
     } catch (err) {
