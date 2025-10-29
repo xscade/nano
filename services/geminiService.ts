@@ -7,21 +7,22 @@ if (!process.env.API_KEY) {
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function editImageWithPrompt(
-  base64ImageData: string,
-  mimeType: string,
+  images: { base64ImageData: string; mimeType: string }[],
   prompt: string
 ): Promise<string> {
   try {
+    const imageParts = images.map(image => ({
+      inlineData: {
+        data: image.base64ImageData,
+        mimeType: image.mimeType,
+      },
+    }));
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [
-          {
-            inlineData: {
-              data: base64ImageData,
-              mimeType: mimeType,
-            },
-          },
+          ...imageParts,
           {
             text: prompt,
           },

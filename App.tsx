@@ -10,12 +10,13 @@ type Theme = 'light' | 'dark';
 
 const App: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('A futuristic city powered by nano technology, golden hour lighting, ultra detailed...');
-  const [image, setImage] = useState<ImageFile | null>(null);
+  const [images, setImages] = useState<ImageFile[]>([]);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<GenerationMode>('image-to-image');
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
+  const [aspectRatio, setAspectRatio] = useState<string>('1:1');
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -27,6 +28,60 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  const parseAspectRatio = (ratio: string): number => {
+    const [width, height] = ratio.split(':').map(Number);
+    if (!height || !width) return 1;
+    return width / height;
+  };
+  
+  async function processImageWithAspectRatio(imageFile: ImageFile, targetAspectRatio: string): Promise<{ base64ImageData: string; mimeType: string }> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+  
+        if (!ctx) {
+          return reject(new Error('Could not get canvas context'));
+        }
+  
+        const TARGET_WIDTH = 1024;
+        const numericTargetRatio = parseAspectRatio(targetAspectRatio);
+        canvas.width = TARGET_WIDTH;
+        canvas.height = Math.round(TARGET_WIDTH / numericTargetRatio);
+  
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+        const sourceRatio = img.width / img.height;
+        let drawWidth, drawHeight;
+  
+        if (sourceRatio > numericTargetRatio) {
+          drawWidth = canvas.width;
+          drawHeight = drawWidth / sourceRatio;
+        } else {
+          drawHeight = canvas.height;
+          drawWidth = drawHeight * sourceRatio;
+        }
+  
+        const offsetX = (canvas.width - drawWidth) / 2;
+        const offsetY = (canvas.height - drawHeight) / 2;
+  
+        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+  
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        const base64ImageData = dataUrl.split(',')[1];
+        if (!base64ImageData) {
+            reject(new Error('Failed to extract base64 data from canvas.'));
+            return;
+        }
+        resolve({ base64ImageData, mimeType: 'image/jpeg' });
+      };
+      img.onerror = () => reject(new Error('Failed to load image for processing.'));
+      img.src = imageFile.dataUrl;
+    });
+  }
+
   const handleGenerate = async () => {
     setIsLoading(true);
     setError(null);
@@ -34,24 +89,27 @@ const App: React.FC = () => {
 
     try {
       let resultImageUrl: string;
+      const fullPrompt = `Please generate a new image with a strict aspect ratio of ${aspectRatio}. The content of the image should be based on the following instructions: ${prompt}`;
+
       if (mode === 'image-to-image') {
-        if (!image || !prompt) {
-          setError('Please upload an image and provide a prompt.');
+        if (images.length === 0 || !prompt) {
+          setError('Please upload at least one image and provide a prompt.');
           setIsLoading(false);
           return;
         }
-        const base64Data = image.dataUrl.split(',')[1];
-        if (!base64Data) {
-          throw new Error('Invalid image data URL.');
-        }
-        resultImageUrl = await editImageWithPrompt(base64Data, image.file.type, prompt);
+        
+        const processedImageData = await Promise.all(
+          images.map(img => processImageWithAspectRatio(img, aspectRatio))
+        );
+        
+        resultImageUrl = await editImageWithPrompt(processedImageData, fullPrompt);
       } else { // mode === 'text-to-image'
         if (!prompt) {
           setError('Please provide a prompt.');
           setIsLoading(false);
           return;
         }
-        resultImageUrl = await generateImageFromText(prompt);
+        resultImageUrl = await generateImageFromText(fullPrompt);
       }
       setGeneratedImage(resultImageUrl);
     } catch (err) {
@@ -75,12 +133,14 @@ const App: React.FC = () => {
         <PromptEngine
           prompt={prompt}
           setPrompt={setPrompt}
-          image={image}
-          setImage={setImage}
+          images={images}
+          setImages={setImages}
           onGenerate={handleGenerate}
           isLoading={isLoading}
           mode={mode}
           setMode={setMode}
+          aspectRatio={aspectRatio}
+          setAspectRatio={setAspectRatio}
         />
         <OutputGallery
           generatedImage={generatedImage}

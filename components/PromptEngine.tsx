@@ -3,99 +3,102 @@ import type { ImageFile } from '../types';
 import { RocketIcon } from './icons/RocketIcon';
 import { CameraIcon } from './icons/CameraIcon';
 import { TextIcon } from './icons/TextIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
 import { ImageIcon } from './icons/ImageIcon';
 import { MainPromptIcon } from './icons/MainPromptIcon';
 import { CopyIcon } from './icons/CopyIcon';
 import { LightningIcon } from './icons/LightningIcon';
+import { XIcon } from './icons/XIcon';
+import { AspectRatioIcon } from './icons/AspectRatioIcon';
 
 type GenerationMode = 'image-to-image' | 'text-to-image';
 
 interface PromptEngineProps {
   prompt: string;
   setPrompt: (prompt: string) => void;
-  image: ImageFile | null;
-  setImage: (image: ImageFile | null) => void;
+  images: ImageFile[];
+  setImages: (images: ImageFile[]) => void;
   onGenerate: () => void;
   isLoading: boolean;
   mode: GenerationMode;
   setMode: (mode: GenerationMode) => void;
+  aspectRatio: string;
+  setAspectRatio: (ratio: string) => void;
 }
 
-const ImageUpload: React.FC<{ image: ImageFile | null; onImageChange: (file: File) => void; }> = ({ image, onImageChange }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            onImageChange(file);
-        }
-    };
-
-    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const file = event.dataTransfer.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-            onImageChange(file);
-        }
-    };
-    
-    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-    };
-
-    const handleClick = () => {
-        fileInputRef.current?.click();
-    }
-
+const AspectRatioSelector: React.FC<{ selected: string; onSelect: (ratio: string) => void; }> = ({ selected, onSelect }) => {
+    const ratios = ['1:1', '4:3', '3:4', '16:9', '9:16'];
     return (
-        <div className="mt-4">
+        <div className="mt-6">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-2">
-                <ImageIcon />
-                Reference Image 0/1
+                <AspectRatioIcon />
+                Aspect Ratio
             </h3>
-            <div 
-                className="relative w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col justify-center items-center text-gray-500 dark:text-gray-400 cursor-pointer hover:border-gray-900 dark:hover:border-gray-300 transition-colors bg-gray-50 dark:bg-gray-700/50"
-                onClick={handleClick}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-            >
-                {image ? (
-                     <img src={image.dataUrl} alt="Preview" className="w-full h-full object-contain rounded-lg p-1" />
-                ) : (
-                    <>
-                        <div className="text-4xl">+</div>
-                        <div className="mt-2 text-sm">Add Image</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Max 10MB</div>
-                    </>
-                )}
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/png, image/jpeg, image/webp"
-                    className="hidden"
-                />
+            <div className="grid grid-cols-5 gap-2">
+                {ratios.map(ratio => (
+                    <button
+                        key={ratio}
+                        onClick={() => onSelect(ratio)}
+                        className={`flex items-center justify-center py-2 px-1 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${selected === ratio ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                    >
+                        {ratio}
+                    </button>
+                ))}
             </div>
         </div>
     );
 };
 
-export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, image, setImage, onGenerate, isLoading, mode, setMode }) => {
+export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, images, setImages, onGenerate, isLoading, mode, setMode, aspectRatio, setAspectRatio }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+          addImage(file);
+      }
+      // Reset file input to allow uploading the same file again
+      if (event.target) {
+        event.target.value = '';
+      }
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const file = event.dataTransfer.files?.[0];
+      if (file && file.type.startsWith('image/')) {
+          addImage(file);
+      }
+  };
   
-  const handleImageChange = useCallback((file: File) => {
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+  };
+
+  const handleClick = () => {
+      fileInputRef.current?.click();
+  }
+
+  const addImage = useCallback((file: File) => {
+    if (images.length >= 5) {
+        alert("You can upload a maximum of 5 images.");
+        return;
+    }
     if (file.size > 10 * 1024 * 1024) {
         alert("File size exceeds 10MB limit.");
         return;
     }
     const reader = new FileReader();
     reader.onloadend = () => {
-        setImage({ file, dataUrl: reader.result as string });
+        setImages([...images, { file, dataUrl: reader.result as string }]);
     };
     reader.readAsDataURL(file);
-  }, [setImage]);
+  }, [images, setImages]);
+
+  const handleRemoveImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+  };
 
   const copyPrompt = () => {
     navigator.clipboard.writeText(prompt);
@@ -129,7 +132,48 @@ export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, i
                 </button>
             </div>
             
-            {mode === 'image-to-image' && <ImageUpload image={image} onImageChange={handleImageChange} />}
+            {mode === 'image-to-image' && (
+                <div className="mt-4">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-2">
+                        <ImageIcon />
+                        Reference Images {images.length}/5
+                    </h3>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                        {images.map((image, index) => (
+                            <div key={index} className="relative group aspect-square">
+                                <img src={image.dataUrl} alt={`Preview ${index + 1}`} className="w-full h-full object-cover rounded-lg" />
+                                <button 
+                                    onClick={() => handleRemoveImage(index)}
+                                    className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                                    aria-label="Remove image"
+                                >
+                                    <XIcon />
+                                </button>
+                            </div>
+                        ))}
+                        {images.length < 5 && (
+                            <div 
+                                className="relative w-full aspect-square border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col justify-center items-center text-gray-500 dark:text-gray-400 cursor-pointer hover:border-gray-900 dark:hover:border-gray-300 transition-colors bg-gray-50 dark:bg-gray-700/50"
+                                onClick={handleClick}
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                            >
+                                <div className="text-2xl">+</div>
+                                <div className="mt-1 text-xs">Add Image</div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    accept="image/png, image/jpeg, image/webp"
+                                    className="hidden"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            <AspectRatioSelector selected={aspectRatio} onSelect={setAspectRatio} />
 
             <div className="mt-6">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-2">
@@ -153,7 +197,7 @@ export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, i
         <div className="mt-6">
             <button 
                 onClick={onGenerate}
-                disabled={isLoading || !prompt || (mode === 'image-to-image' && !image)}
+                disabled={isLoading || !prompt || (mode === 'image-to-image' && images.length === 0)}
                 className="w-full bg-black dark:bg-white text-white dark:text-black font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors hover:bg-gray-800 dark:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoading ? (
