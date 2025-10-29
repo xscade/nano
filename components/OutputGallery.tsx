@@ -1,10 +1,13 @@
 import React from 'react';
 import { ImageIcon } from './icons/ImageIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
+import { WandIcon } from './icons/WandIcon';
 
 interface OutputGalleryProps {
   generatedImage: string | null;
   isLoading: boolean;
   error: string | null;
+  onFollowUp: () => void;
 }
 
 const Placeholder: React.FC = () => (
@@ -36,7 +39,19 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
     </div>
 );
 
-export const OutputGallery: React.FC<OutputGalleryProps> = ({ generatedImage, isLoading, error }) => {
+export const OutputGallery: React.FC<OutputGalleryProps> = ({ generatedImage, isLoading, error, onFollowUp }) => {
+  const handleDownload = () => {
+    if (!generatedImage) return;
+    const link = document.createElement('a');
+    link.href = generatedImage;
+    const mimeType = generatedImage.split(';')[0].split(':')[1] || 'image/png';
+    const extension = mimeType.split('/')[1] || 'png';
+    link.download = `xscade-creative-studio.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">Output Gallery</h2>
@@ -48,7 +63,27 @@ export const OutputGallery: React.FC<OutputGalleryProps> = ({ generatedImage, is
         ) : error ? (
           <ErrorState message={error} />
         ) : generatedImage ? (
-          <img src={generatedImage} alt="Generated output" className="w-full h-full object-contain rounded-lg" />
+          <div className="relative w-full h-full group">
+            <img src={generatedImage} alt="Generated output" className="w-full h-full object-contain rounded-lg" />
+            <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                onClick={onFollowUp}
+                className="bg-black bg-opacity-60 text-white p-2 rounded-full focus:opacity-100"
+                aria-label="Use as reference"
+                title="Use as reference"
+                >
+                <WandIcon />
+                </button>
+                <button
+                onClick={handleDownload}
+                className="bg-black bg-opacity-60 text-white p-2 rounded-full focus:opacity-100"
+                aria-label="Download image"
+                title="Download image"
+                >
+                <DownloadIcon />
+                </button>
+            </div>
+          </div>
         ) : (
           <Placeholder />
         )}

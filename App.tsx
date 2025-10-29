@@ -120,6 +120,35 @@ const App: React.FC = () => {
     }
   };
 
+  const handleFollowUp = async () => {
+    if (!generatedImage) return;
+
+    try {
+        const response = await fetch(generatedImage);
+        const blob = await response.blob();
+        const file = new File([blob], `follow-up-${Date.now()}.png`, { type: blob.type });
+
+        const newImageFile: ImageFile = {
+            file,
+            dataUrl: generatedImage
+        };
+        
+        // Add the new image, ensuring we don't exceed the 5 image limit
+        setImages(prevImages => [...prevImages, newImageFile].slice(-5));
+        setMode('image-to-image');
+        setGeneratedImage(null); // Clear the output gallery to start the new cycle
+        setError(null);
+        
+        // Optional: Scroll to the top to see the new reference image
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+        console.error("Failed to process follow-up image:", err);
+        setError("Could not use the generated image as a reference. Please try downloading and re-uploading it.");
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans p-4 sm:p-6 lg:p-8 transition-colors duration-300">
       <header className="text-center mb-8 relative">
@@ -146,6 +175,7 @@ const App: React.FC = () => {
           generatedImage={generatedImage}
           isLoading={isLoading}
           error={error}
+          onFollowUp={handleFollowUp}
         />
       </main>
     </div>
