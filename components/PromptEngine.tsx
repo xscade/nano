@@ -52,12 +52,12 @@ const ImageUpload: React.FC<{ image: ImageFile | null; onImageChange: (file: Fil
 
     return (
         <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-2">
                 <ImageIcon />
                 Reference Image 0/1
             </h3>
             <div 
-                className="relative w-full h-48 border-2 border-dashed border-gray-600 rounded-lg flex flex-col justify-center items-center text-gray-400 cursor-pointer hover:border-yellow-500 transition-colors bg-[#1f2430]/30"
+                className="relative w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col justify-center items-center text-gray-500 dark:text-gray-400 cursor-pointer hover:border-gray-900 dark:hover:border-gray-300 transition-colors bg-gray-50 dark:bg-gray-700/50"
                 onClick={handleClick}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -68,7 +68,7 @@ const ImageUpload: React.FC<{ image: ImageFile | null; onImageChange: (file: Fil
                     <>
                         <div className="text-4xl">+</div>
                         <div className="mt-2 text-sm">Add Image</div>
-                        <div className="text-xs text-gray-500">Max 10MB</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Max 10MB</div>
                     </>
                 )}
                 <input
@@ -102,53 +102,37 @@ export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, i
   };
     
   return (
-    <div className="bg-[#1f2430]/50 border border-yellow-600/30 rounded-2xl p-6 relative flex flex-col h-full">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 relative flex flex-col h-full shadow-sm">
         <div className="flex-grow">
             <div className="flex items-center gap-4">
-                <div className="bg-yellow-500/10 p-2 rounded-lg">
+                <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
                     <RocketIcon />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-white">Prompt Engine</h2>
-                    <p className="text-sm text-gray-400">Transform your image with AI-powered editing</p>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Prompt Engine</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Transform your image with AI-powered editing</p>
                 </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-2 p-1 bg-[#0b0f19] rounded-lg">
+            <div className="mt-6 grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
                 <button 
                     onClick={() => setMode('image-to-image')}
-                    className={`flex items-center justify-center gap-2 py-2 px-4 rounded-md font-semibold text-sm transition-all ${mode === 'image-to-image' ? 'bg-yellow-500 text-gray-900' : 'text-gray-400 hover:bg-gray-700/50'}`}
+                    className={`flex items-center justify-center gap-2 py-2 px-4 rounded-md font-semibold text-sm transition-all ${mode === 'image-to-image' ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                 >
                     <CameraIcon /> Image to Image
                 </button>
                 <button
                      onClick={() => setMode('text-to-image')}
-                     className={`flex items-center justify-center gap-2 py-2 px-4 rounded-md font-semibold text-sm transition-all ${mode === 'text-to-image' ? 'bg-yellow-500 text-gray-900' : 'text-gray-400 hover:bg-gray-700/50'}`}
+                     className={`flex items-center justify-center gap-2 py-2 px-4 rounded-md font-semibold text-sm transition-all ${mode === 'text-to-image' ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                 >
                     <TextIcon /> Text to Image
                 </button>
-            </div>
-
-            <div className="mt-6">
-                <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-2">
-                    <SparklesIcon />
-                    AI Model Selection
-                </h3>
-                <div className="relative">
-                    <select className="w-full bg-[#0b0f19] border border-gray-600 rounded-lg py-2 px-3 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                        <option>Nano Banana</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.516 7.548c.436-.446 1.144-.446 1.58 0L10 10.402l2.904-2.854c.436-.446 1.144-.446 1.58 0 .436.446.436 1.164 0 1.61l-3.694 3.63c-.436.446-1.144.446-1.58 0L5.516 9.158c-.436-.446-.436-1.164 0-1.61z"/></svg>
-                    </div>
-                </div>
-                 <p className="text-xs text-gray-500 mt-1">Different models offer unique characteristics and styles</p>
             </div>
             
             {mode === 'image-to-image' && <ImageUpload image={image} onImageChange={handleImageChange} />}
 
             <div className="mt-6">
-                <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-2">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-2">
                     <MainPromptIcon />
                     Main Prompt
                 </h3>
@@ -157,9 +141,9 @@ export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, i
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="A futuristic city..."
-                        className="w-full h-24 bg-[#0b0f19] border border-gray-600 rounded-lg p-3 text-white resize-none focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        className="w-full h-24 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
                     />
-                    <button onClick={copyPrompt} className="absolute bottom-2 right-2 flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors">
+                    <button onClick={copyPrompt} className="absolute bottom-2 right-2 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
                         <CopyIcon /> Copy
                     </button>
                 </div>
@@ -170,11 +154,11 @@ export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, i
             <button 
                 onClick={onGenerate}
                 disabled={isLoading || !prompt || (mode === 'image-to-image' && !image)}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-gray-900 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-black dark:bg-white text-white dark:text-black font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors hover:bg-gray-800 dark:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoading ? (
                     <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
