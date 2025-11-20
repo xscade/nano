@@ -9,6 +9,7 @@ import { CopyIcon } from './icons/CopyIcon';
 import { LightningIcon } from './icons/LightningIcon';
 import { XIcon } from './icons/XIcon';
 import { AspectRatioIcon } from './icons/AspectRatioIcon';
+import { CrownIcon } from './icons/CrownIcon';
 
 type GenerationMode = 'image-to-image' | 'text-to-image';
 
@@ -23,6 +24,8 @@ interface PromptEngineProps {
   setMode: (mode: GenerationMode) => void;
   aspectRatio: string;
   setAspectRatio: (ratio: string) => void;
+  useProModel: boolean;
+  setUseProModel: (usePro: boolean) => void;
 }
 
 const AspectRatioSelector: React.FC<{ selected: string; onSelect: (ratio: string) => void; }> = ({ selected, onSelect }) => {
@@ -48,7 +51,10 @@ const AspectRatioSelector: React.FC<{ selected: string; onSelect: (ratio: string
     );
 };
 
-export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, images, setImages, onGenerate, isLoading, mode, setMode, aspectRatio, setAspectRatio }) => {
+export const PromptEngine: React.FC<PromptEngineProps> = ({ 
+    prompt, setPrompt, images, setImages, onGenerate, isLoading, 
+    mode, setMode, aspectRatio, setAspectRatio, useProModel, setUseProModel 
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,13 +113,31 @@ export const PromptEngine: React.FC<PromptEngineProps> = ({ prompt, setPrompt, i
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 relative flex flex-col h-full shadow-sm">
         <div className="flex-grow">
-            <div className="flex items-center gap-4">
-                <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
-                    <RocketIcon />
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
+                        <RocketIcon />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Prompt Engine</h2>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Transform your image with AI</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Prompt Engine</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Transform your image with AI-powered editing</p>
+                <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1">
+                    <button
+                        onClick={() => setUseProModel(false)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${!useProModel ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
+                    >
+                        <LightningIcon />
+                        Fast
+                    </button>
+                    <button
+                        onClick={() => setUseProModel(true)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${useProModel ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                    >
+                        <CrownIcon />
+                        Pro
+                    </button>
                 </div>
             </div>
 

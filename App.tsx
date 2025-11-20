@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [mode, setMode] = useState<GenerationMode>('image-to-image');
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
   const [aspectRatio, setAspectRatio] = useState<string>('1:1');
+  const [useProModel, setUseProModel] = useState<boolean>(false);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -88,6 +89,18 @@ const App: React.FC = () => {
     setGeneratedImage(null);
 
     try {
+      // Check for API Key if using Pro model
+      if (useProModel) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (window as any).aistudio.openSelectKey();
+          // We continue assuming key was selected, or user will try again
+          // If race condition is a worry, the next call will just fail or use the new key
+        }
+      }
+
       let resultImageUrl: string;
       
       if (mode === 'image-to-image') {
@@ -102,14 +115,14 @@ const App: React.FC = () => {
           images.map(img => processImageWithAspectRatio(img, aspectRatio))
         );
         
-        resultImageUrl = await editImageWithPrompt(processedImageData, fullPrompt);
+        resultImageUrl = await editImageWithPrompt(processedImageData, fullPrompt, useProModel);
       } else { // mode === 'text-to-image'
         if (!prompt) {
           setError('Please provide a prompt.');
           setIsLoading(false);
           return;
         }
-        resultImageUrl = await generateImageFromText(prompt, aspectRatio);
+        resultImageUrl = await generateImageFromText(prompt, aspectRatio, useProModel);
       }
       setGeneratedImage(resultImageUrl);
     } catch (err) {
@@ -170,6 +183,8 @@ const App: React.FC = () => {
           setMode={setMode}
           aspectRatio={aspectRatio}
           setAspectRatio={setAspectRatio}
+          useProModel={useProModel}
+          setUseProModel={setUseProModel}
         />
         <OutputGallery
           generatedImage={generatedImage}
