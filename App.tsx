@@ -92,12 +92,21 @@ const App: React.FC = () => {
       // Check for API Key if using Pro model
       if (useProModel) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (window as any).aistudio.openSelectKey();
-          // We continue assuming key was selected, or user will try again
-          // If race condition is a worry, the next call will just fail or use the new key
+        const win = window as any;
+        
+        // Robustly check for aistudio and its methods to avoid undefined errors
+        if (win.aistudio && typeof win.aistudio.hasSelectedApiKey === 'function') {
+          try {
+            const hasKey = await win.aistudio.hasSelectedApiKey();
+            if (!hasKey && typeof win.aistudio.openSelectKey === 'function') {
+              await win.aistudio.openSelectKey();
+            }
+          } catch (keyError) {
+            console.warn("Failed to check/request API key:", keyError);
+            // Do not throw here, try to proceed with default env key
+          }
+        } else {
+           console.log("window.aistudio not available; attempting generation with default environment key.");
         }
       }
 
@@ -127,7 +136,14 @@ const App: React.FC = () => {
       setGeneratedImage(resultImageUrl);
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      
+      // Provide a more helpful message for 403 errors
+      if (errorMessage.includes('403') || errorMessage.includes('PERMISSION_DENIED') || errorMessage.includes('permission')) {
+        setError('Permission denied. The Pro model requires a paid API key. Please check your access or try the Fast model.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
