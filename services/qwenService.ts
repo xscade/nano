@@ -1,15 +1,6 @@
-const QWEN_LAYERED_URL = 'https://gateway.pixazo.ai/qwen-image-layered/v1/qwen-image-layered-request';
+import { uploadImageToGcs } from './storageService';
 
-/** Convert base64 data URL to a public URL via 0x0.st (free, no API key) for APIs that require URLs */
-async function dataUrlToPublicUrl(dataUrl: string): Promise<string> {
-  const res = await fetch(dataUrl);
-  const blob = await res.blob();
-  const form = new FormData();
-  form.append('file', blob, 'image.png');
-  const upload = await fetch('https://0x0.st', { method: 'POST', body: form });
-  if (!upload.ok) throw new Error('Failed to upload image for diffusion');
-  return (await upload.text()).trim();
-}
+const QWEN_LAYERED_URL = 'https://gateway.pixazo.ai/qwen-image-layered/v1/qwen-image-layered-request';
 
 export interface QwenLayeredOptions {
   num_inference_steps?: number;
@@ -41,10 +32,10 @@ export async function diffuseImage(
     acceleration = 'regular',
   } = options;
 
-  // Pixazo expects a public URL; convert data URLs to hosted URL
+  // Pixazo expects a public URL; upload data URLs to GCS
   let imageUrl = imageDataUrl;
   if (imageDataUrl.startsWith('data:')) {
-    imageUrl = await dataUrlToPublicUrl(imageDataUrl);
+    imageUrl = await uploadImageToGcs(imageDataUrl);
   }
 
   const data = {
@@ -90,35 +81,37 @@ export async function diffuseImage(
     result.images?.[0] ??
     result.image;
 
+  let dataUrl: string;
+
   if (typeof imageData === 'string') {
-    if (imageData.startsWith('data:')) return imageData;
-    if (imageData.startsWith('http')) {
+    if (imageData.startsWith('data:')) dataUrl = imageData;
+    else if (imageData.startsWith('http')) {
       const imgRes = await fetch(imageData);
       const blob = await imgRes.blob();
-      return new Promise((resolve, reject) => {
+      dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
+    } else {
+      dataUrl = `data:image/${output_format};base64,${imageData}`;
     }
-    return `data:image/${output_format};base64,${imageData}`;
-  }
-
-  if (imageData?.url) {
+  } else if (imageData?.url) {
     const imgRes = await fetch(imageData.url);
     const blob = await imgRes.blob();
-    return new Promise((resolve, reject) => {
+    dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result as string);
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
+  } else if (imageData?.b64_json) {
+    dataUrl = `data:image/${output_format};base64,${imageData.b64_json}`;
+  } else {
+    throw new Error('No image data in Qwen API response');
   }
 
-  if (imageData?.b64_json) {
-    return `data:image/${output_format};base64,${imageData.b64_json}`;
-  }
-
-  throw new Error('No image data in Qwen API response');
+  // Store result in GCS and return the public URL
+  return uploadImageToGcs(dataUrl);
 }

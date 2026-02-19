@@ -4,6 +4,7 @@ import { OutputGallery } from './components/OutputGallery';
 import { ThemeToggle } from './components/ThemeToggle';
 import { editImageWithPrompt, generateImageFromText } from './services/geminiService';
 import { diffuseImage } from './services/qwenService';
+import { uploadImageToGcs } from './services/storageService';
 import type { ImageFile } from './types';
 
 type GenerationMode = 'image-to-image' | 'text-to-image';
@@ -135,7 +136,15 @@ const App: React.FC = () => {
         }
         resultImageUrl = await generateImageFromText(prompt, aspectRatio, useProModel);
       }
-      setGeneratedImage(resultImageUrl);
+
+      // Store in GCS when possible; fall back to data URL if upload fails
+      try {
+        const gcsUrl = await uploadImageToGcs(resultImageUrl);
+        setGeneratedImage(gcsUrl);
+      } catch (uploadErr) {
+        console.warn('GCS upload failed, using inline image:', uploadErr);
+        setGeneratedImage(resultImageUrl);
+      }
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';

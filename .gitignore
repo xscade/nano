@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# GCS service account key (contains secrets)
+*-storage-key.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
