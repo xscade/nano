@@ -2,12 +2,15 @@ import React from 'react';
 import { ImageIcon } from './icons/ImageIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { WandIcon } from './icons/WandIcon';
+import { DiffuseIcon } from './icons/DiffuseIcon';
 
 interface OutputGalleryProps {
   generatedImage: string | null;
   isLoading: boolean;
   error: string | null;
   onFollowUp: () => void;
+  onDiffuse: () => void;
+  isDiffusing?: boolean;
 }
 
 const Placeholder: React.FC = () => (
@@ -39,7 +42,7 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
     </div>
 );
 
-export const OutputGallery: React.FC<OutputGalleryProps> = ({ generatedImage, isLoading, error, onFollowUp }) => {
+export const OutputGallery: React.FC<OutputGalleryProps> = ({ generatedImage, isLoading, error, onFollowUp, onDiffuse, isDiffusing = false }) => {
   const handleDownload = () => {
     if (!generatedImage) return;
     const link = document.createElement('a');
@@ -65,6 +68,11 @@ export const OutputGallery: React.FC<OutputGalleryProps> = ({ generatedImage, is
         ) : generatedImage ? (
           <div className="relative w-full h-full group">
             <img src={generatedImage} alt="Generated output" className="w-full h-full object-contain rounded-lg" />
+            {isDiffusing && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
+                <span className="text-white font-medium">Diffusing...</span>
+              </div>
+            )}
             <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                 onClick={onFollowUp}
@@ -73,6 +81,15 @@ export const OutputGallery: React.FC<OutputGalleryProps> = ({ generatedImage, is
                 title="Use as reference"
                 >
                 <WandIcon />
+                </button>
+                <button
+                onClick={onDiffuse}
+                disabled={isDiffusing}
+                className="bg-black bg-opacity-60 text-white p-2 rounded-full focus:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Diffuse image"
+                title="Diffuse image with Qwen"
+                >
+                <DiffuseIcon />
                 </button>
                 <button
                 onClick={handleDownload}

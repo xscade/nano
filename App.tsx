@@ -3,6 +3,7 @@ import { PromptEngine } from './components/PromptEngine';
 import { OutputGallery } from './components/OutputGallery';
 import { ThemeToggle } from './components/ThemeToggle';
 import { editImageWithPrompt, generateImageFromText } from './services/geminiService';
+import { diffuseImage } from './services/qwenService';
 import type { ImageFile } from './types';
 
 type GenerationMode = 'image-to-image' | 'text-to-image';
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
   const [aspectRatio, setAspectRatio] = useState<string>('1:1');
   const [useProModel, setUseProModel] = useState<boolean>(false);
+  const [isDiffusing, setIsDiffusing] = useState<boolean>(false);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -149,6 +151,26 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDiffuse = async () => {
+    if (!generatedImage) return;
+    const apiKey = process.env.PIXAZO_API_KEY;
+    if (!apiKey) {
+      setError('Pixazo API key not configured. Add PIXAZO_API_KEY to .env.local');
+      return;
+    }
+    setIsDiffusing(true);
+    setError(null);
+    try {
+      const diffused = await diffuseImage(generatedImage, apiKey);
+      setGeneratedImage(diffused);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Diffusion failed');
+    } finally {
+      setIsDiffusing(false);
+    }
+  };
+
   const handleFollowUp = async () => {
     if (!generatedImage) return;
 
@@ -207,6 +229,8 @@ const App: React.FC = () => {
           isLoading={isLoading}
           error={error}
           onFollowUp={handleFollowUp}
+          onDiffuse={handleDiffuse}
+          isDiffusing={isDiffusing}
         />
       </main>
     </div>
