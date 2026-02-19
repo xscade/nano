@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isProd = process.env.NODE_ENV === 'production';
 
 const app = express();
 app.use(cors());
@@ -68,7 +69,16 @@ app.post('/api/upload', async (req, res) => {
   }
 });
 
+// Serve built static files in production
+if (isProd) {
+  app.use(express.static(path.join(process.cwd(), 'dist')));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Upload API running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}${isProd ? ' (production)' : ''}`);
 });
