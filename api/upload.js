@@ -19,11 +19,16 @@ export default async function handler(req, res) {
 
   const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
   const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME;
-  const keyJson = process.env.GOOGLE_CLOUD_KEY_JSON;
+  const keyJson =
+    process.env.GOOGLE_CLOUD_KEY_JSON || process.env.GCLOUD_KEY_JSON;
 
   if (!projectId || !bucketName || !keyJson) {
+    const missing = [];
+    if (!projectId) missing.push('GOOGLE_CLOUD_PROJECT_ID');
+    if (!bucketName) missing.push('GOOGLE_CLOUD_BUCKET_NAME');
+    if (!keyJson) missing.push('GOOGLE_CLOUD_KEY_JSON');
     return res.status(500).json({
-      error: 'Missing GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_BUCKET_NAME, or GOOGLE_CLOUD_KEY_JSON',
+      error: `Add these in Vercel → Project Settings → Environment Variables: ${missing.join(', ')}. For GOOGLE_CLOUD_KEY_JSON, paste the full xscade-portal-storage-key.json contents.`,
     });
   }
 
